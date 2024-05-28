@@ -34,6 +34,16 @@ func Cover(coverProfile string, opts ...CoverOpt) (Coverage, error) {
 	return cp.Stats(bytes.NewBuffer(covOut), bytes.NewBuffer(fnOut))
 }
 
+func SimpleCover(coverProfile string, opts ...CoverOpt) (Coverage, error) {
+	covOut, err := os.ReadFile(coverProfile)
+	if err != nil {
+		return Coverage{}, fmt.Errorf("error reading coverage profile: %w", err)
+	}
+
+	cp := NewCoverageParser(opts...)
+	return cp.Stats(bytes.NewBuffer(covOut), nil)
+}
+
 // CoverFromReaders parses the coverage and function profiles and returns a statistics based on the profiles read.
 // If you want to generate the function profile automatically, use Cover instead.
 func CoverFromReaders(coverProfile io.Reader, fnProfile io.Reader, opts ...CoverOpt) (Coverage, error) {
@@ -91,9 +101,13 @@ func (p *CoverageParser) Stats(coverProfile, fnProfile io.Reader) (Coverage, err
 		return Coverage{}, fmt.Errorf("couldn't parse cover profile: %w", err)
 	}
 
-	output, err := p.funcParser(fnProfile)
-	if err != nil {
-		return Coverage{}, fmt.Errorf("couldn't parse func profile: %w", err)
+	output := []*gofunc.PackageFunctions{}
+
+	if fnProfile != nil {
+		output, err = p.funcParser(fnProfile)
+		if err != nil {
+			return Coverage{}, fmt.Errorf("couldn't parse func profile: %w", err)
+		}
 	}
 
 	coverage := newCoverage(profiles, output)

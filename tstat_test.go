@@ -38,6 +38,33 @@ func Test_Cover(t *testing.T) {
 	}
 }
 
+func Test_SimpleCover(t *testing.T) {
+	tests := []struct {
+		name, covFile string
+		wantPercent   float64
+		wantErr       bool
+		wantInitErr   bool
+	}{
+		{name: "happy", covFile: "prog/cover.out", wantPercent: 25},
+		{name: "file not found", covFile: "cover-not-found.out", wantInitErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tstat.SimpleCover("testdata/" + tt.covFile)
+			if (err != nil) != tt.wantInitErr {
+				t.Errorf("Cover() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err != nil {
+				return
+			}
+			if got.Percent != tt.wantPercent {
+				t.Errorf("Cover() = got statement pct %v, wanted %v", got.Percent, tt.wantPercent)
+			}
+		})
+	}
+}
+
 func Test_Cover_CmdError(t *testing.T) {
 	t.Setenv("GOROOT", "bad go root")
 	testDir := "testdata/"
